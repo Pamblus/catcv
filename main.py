@@ -23,7 +23,7 @@ CONFIG = {
     'host': '0.0.0.0',
     'ssl_cert': 'cert.pem',
     'ssl_key': 'key.pem',
-    'assets_folder': 'assets',  # ИЗМЕНИЛИ static на assets
+    'assets_folder': 'assets',
     'auto_create_cert': True,
     'ngrok_enabled': False,
     'ngrok_auth_token': '',
