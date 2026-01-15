@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 MeowCV - Детектор эмоций с котиками</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        h1 {
+            color: #2d3436;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #636e72;
+            font-size: 1.1rem;
+        }
+        
+        .https-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .video-section, .cat-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: #2d3436;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        #video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+        
+        .cat-display {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+        
+        #catImage {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 15px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-panel {
+            background: #f1f2f6;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        #status {
+            padding: 15px;
+            background: #fff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-good {
+            border-left-color: #10b981 !important;
+            background: #d1fae5 !important;
+        }
+        
+        .status-warning {
+            border-left-color: #f59e0b !important;
+            background: #fef3c7 !important;
+        }
+        
+        .status-error {
+            border-left-color: #ef4444 !important;
+            background: #fee2e2 !important;
+        }
+        
+        .server-info {
+            background: #e0f2fe;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐱 MeowCV</h1>
+            <p class="subtitle">Детектор эмоций с котиками в реальном времени</p>
+            <div class="https-badge">🔐 HTTPS ЗАЩИЩЕНО</div>
+        </header>
+        
+        <div class="server-info">
+            📡 Сервер: <span id="serverUrl">Определение...</span><br>
+            🔒 Протокол: <span id="protocol">Определение...</span><br>
+            🖼️ Папка с картинками: /assets/
+        </div>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <h2 class="section-title">🎥 Ваша камера</h2>
+                <div class="video-container">
+                    <video id="video" autoplay playsinline></video>
+                </div>
+                
+                <div class="controls">
+                    <button id="startCameraBtn" class="btn btn-primary">
+                        <span>🎥</span> Запустить камеру
+                    </button>
+                    <button id="startDetectionBtn" class="btn btn-primary" disabled>
+                        <span>▶️</span> Старт детекции
+                    </button>
+                    <button id="stopDetectionBtn" class="btn" disabled>
+                        <span>⏹️</span> Стоп
+                    </button>
+                </div>
+            </div>
+            
+            <div class="cat-section">
+                <h2 class="section-title">😺 Реакция котика</h2>
+                <div class="cat-display">
+                    <div id="catExpression" style="font-size: 2rem; margin: 10px 0;">😊</div>
+                    <img id="catImage" src="/assets/default-cat.jpg" alt="Котик">
+                    <div id="catMessage" style="margin-top: 15px; font-weight: bold;">Ожидание...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-panel">
+            <h2 class="section-title">📊 Статус системы</h2>
+            <div id="status" class="status-good">
+                ✅ HTTPS сервер готов. Нажмите "Запустить камеру"
+            </div>
+            
+            <div class="controls">
+                <button id="testConnectionBtn" class="btn">
+                    <span>🔗</span> Проверить сервер
+                </button>
+                <button id="autoStartBtn" class="btn btn-primary">
+                    <span>🚀</span> Авто-старт
+                </button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9rem;">
+            <p>⚡ Работает на Flask + Mediapipe + OpenCV</p>
+            <p>🔐 HTTPS соединение активно - камера доступна</p>
+        </div>
+    </div>
+
+    <script>
+        // Элементы DOM
+        const video = document.getElementById('video');
+        const statusDiv = document.getElementById('status');
+        const catImage = document.getElementById('catImage');
+        const catExpression = document.getElementById('catExpression');
+        const catMessage = document.getElementById('catMessage');
+        const serverUrlSpan = document.getElementById('serverUrl');
+        const protocolSpan = document.getElementById('protocol');
+        
+        // Кнопки
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const startDetectionBtn = document.getElementById('startDetectionBtn');
+        const stopDetectionBtn = document.getElementById('stopDetectionBtn');
+        const testConnectionBtn = document.getElementById('testConnectionBtn');
+        const autoStartBtn = document.getElementById('autoStartBtn');
+        
+        // Переменные состояния
+        let stream = null;
+        let isDetecting = false;
+        let detectionInterval = null;
+        let cameraAccessAttempts = 0;
+        const maxCameraAttempts = 3;
+        
+        // Обновление информации о сервере
+        function updateServerInfo() {
+            serverUrlSpan.textContent = window.location.host;
+            protocolSpan.textContent = window.location.protocol.toUpperCase();
+            
+            if (window.location.protocol === 'https:') {
+                statusDiv.textContent = '✅ HTTPS соединение активно! Камера доступна.';
+                statusDiv.className = 'status-good';
+            } else {
+                statusDiv.textContent = '⚠️ Используется HTTP. Для доступа к камере может потребоваться HTTPS.';
+                statusDiv.className = 'status-warning';
+            }
+        }
+        
+        // Проверка сервера
+        async function testServer() {
+            showStatus('Проверка соединения с сервером...', 'info');
+            
+            try {
+                const response = await fetch('/server_info');
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus(`✅ Сервер готов! Протоколы: ${result.protocols.join(', ')}`, 'good');
+                } else {
+                    showStatus('Сервер не отвечает корректно', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Не удалось подключиться к серверу', 'error');
+            }
+        }
+        
+        // Показать статус
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = '';
+            
+            switch(type) {
+                case 'good':
+                    statusDiv.classList.add('status-good');
+                    break;
+                case 'warning':
+                    statusDiv.classList.add('status-warning');
+                    break;
+                case 'error':
+                    statusDiv.classList.add('status-error');
+                    break;
+                default:
+                    statusDiv.classList.add('status-warning');
+            }
+        }
+        
+        // Запрос доступа к камере
+        async function requestCameraAccess() {
+            cameraAccessAttempts++;
+            
+            if (cameraAccessAttempts > maxCameraAttempts) {
+                showStatus('❌ Максимальное количество попыток. Обновите страницу.', 'error');
+                startCameraBtn.disabled = true;
+                return;
+            }
+            
+            showStatus(`📡 Запрос доступа к камере (${cameraAccessAttempts}/${maxCameraAttempts})...`, 'warning');
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: false
+                });
+                
+                video.srcObject = stream;
+                
+                startCameraBtn.disabled = true;
+                startDetectionBtn.disabled = false;
+                
+                showStatus('✅ Камера активирована! Нажмите "Старт детекции"', 'good');
+                cameraAccessAttempts = 0;
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                
+                let errorMessage = 'Ошибка камеры: ';
+                
+                switch(error.name) {
+                    case 'NotAllowedError':
+                        errorMessage += 'Доступ запрещен. Разрешите камеру в настройках браузера.';
+                        showStatus(errorMessage, 'error');
+                        startCameraBtn.disabled = true;
+                        break;
+                        
+                    case 'NotFoundError':
+                        errorMessage += 'Камера не найдена.';
+                        if (cameraAccessAttempts < maxCameraAttempts) {
+                            setTimeout(() => {
+                                showStatus('Повторная попытка...', 'warning');
+                                setTimeout(requestCameraAccess, 2000);
+                            }, 1000);
+                        }
+                        break;
+                        
+                    default:
+                        errorMessage += error.message;
+                        if (cameraAccessAttempts < maxCameraAttempts) {
+                            setTimeout(requestCameraAccess, 2000);
+                        }
+                }
+                
+                showStatus(errorMessage, 'error');
+            }
+        }
+        
+        // Начать детекцию
+        function startDetection() {
+            if (!stream) {
+                showStatus('Сначала запустите камеру', 'error');
+                return;
+            }
+            
+            isDetecting = true;
+            startDetectionBtn.disabled = true;
+            stopDetectionBtn.disabled = false;
+            
+            showStatus('🔍 Детекция запущена...', 'info');
+            
+            detectionInterval = setInterval(async () => {
+                if (!isDetecting) return;
+                
+                // Создаем canvas для захвата кадра
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                
+                const imageData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                try {
+                    const response = await fetch('/detect', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: imageData })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const expressions = {
+                            'shock': '😲 ШОК!',
+                            'tongue': '😛 ЯЗЫК',
+                            'glare': '😒 ПРИЩУР',
+                            'default': '😊 НОРМА'
+                        };
+                        
+                        catExpression.textContent = expressions[result.expression] || '😊';
+                        catImage.src = result.cat_image;
+                        catMessage.textContent = result.message;
+                        
+                        showStatus(`✅ ${result.message}`, 'good');
+                    } else {
+                        catExpression.textContent = '😕';
+                        catMessage.textContent = result.message || 'Лицо не обнаружено';
+                        showStatus(result.message, 'warning');
+                    }
+                    
+                } catch (error) {
+                    showStatus('❌ Ошибка соединения', 'error');
+                    catExpression.textContent = '😢';
+                    catMessage.textContent = 'Ошибка соединения';
+                }
+            }, 500);
+        }
+        
+        // Остановить детекцию
+        function stopDetection() {
+            isDetecting = false;
+            clearInterval(detectionInterval);
+            startDetectionBtn.disabled = false;
+            stopDetectionBtn.disabled = true;
+            
+            showStatus('Детекция остановлена', 'warning');
+            catExpression.textContent = '⏸️';
+            catMessage.textContent = 'Детекция остановлена';
+        }
+        
+        // Остановить камеру
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                video.srcObject = null;
+                
+                startCameraBtn.disabled = false;
+                startDetectionBtn.disabled = true;
+                stopDetectionBtn.disabled = true;
+                
+                showStatus('Камера выключена', 'warning');
+                catExpression.textContent = '📴';
+                catMessage.textContent = 'Камера выключена';
+            }
+        }
+        
+        // Авто-старт
+        async function autoStart() {
+            await requestCameraAccess();
+            if (stream) {
+                startDetection();
+            }
+        }
+        
+        // Инициализация
+        function init() {
+            updateServerInfo();
+            
+            // Кнопки
+            startCameraBtn.addEventListener('click', requestCameraAccess);
+            startDetectionBtn.addEventListener('click', startDetection);
+            stopDetectionBtn.addEventListener('click', stopDetection);
+            testConnectionBtn.addEventListener('click', testServer);
+            autoStartBtn.addEventListener('click', autoStart);
+            
+            // Проверка сервера
+            setTimeout(testServer, 1000);
+            
+            // Очистка при закрытии
+            window.addEventListener('beforeunload', stopCamera);
+        }
+        
+        // Запуск
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
